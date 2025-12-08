@@ -9,7 +9,7 @@ const Card = () => {
           <i className="text-3xl text-blue-600 fa-solid fa-house-chimney-window"></i>
         </span>
 
-        <h3 className="text-2xl font-bold text-gray-800 mb-2">Family Rooms</h3>
+        <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Family Rooms</h3>
         <p className="text-gray-500 leading-relaxed">
           Create private spaces for your family. Invite members with a simple
           link.
@@ -22,7 +22,7 @@ const Card = () => {
           <i className="text-3xl text-amber-600 fa-regular fa-comment-dots"></i>
         </span>
 
-        <h3 className="text-2xl font-bold text-gray-800 mb-2">
+        <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
           Real-time Chat
         </h3>
         <p className="text-gray-500 leading-relaxed">
@@ -37,7 +37,7 @@ const Card = () => {
           <i className="text-3xl text-blue-600 fa-solid fa-location-arrow"></i>
         </span>
 
-        <h3 className="text-2xl font-bold text-gray-800 mb-2">Live Location</h3>
+        <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Live Location</h3>
         <p className="text-gray-500 leading-relaxed">
           See your family's location on the map in real-time for peace of mind.
         </p>
