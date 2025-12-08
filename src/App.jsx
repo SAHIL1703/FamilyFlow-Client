@@ -1,6 +1,6 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-import Navbar from "./components/Navbar.jsx";
+import LandingPage from "./Pages/LandingPage";
 
 //This is For Auth checking
 // simple auth check (replace with your auth logic/context)
@@ -15,7 +15,7 @@ const App = () => {
   return (
     <>
       <Routes>
-        <Route path="/" element={<Navbar />} />
+        <Route path="/" element={<LandingPage />} />
       </Routes>
     </>
   );
