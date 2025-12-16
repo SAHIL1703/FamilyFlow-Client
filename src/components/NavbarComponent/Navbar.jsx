@@ -8,8 +8,9 @@ const Navbar = () => {
   const navItems = [
     { name: "Home", path: "/app-dashboard", className: "fa-regular fa-house" },
     { name: "Room", path: "/app-room", className: "fa-solid fa-user-group" },
-    { name: "Member", path: "/member", className: "fa-regular fa-user" },
-    { name: "Map", path: "/map", className: "fa-regular fa-map" },
+    { name: "Invite", path: "/app-invite", className: "fa-regular fa-user" },
+    { name: "Map", path: "/app-map", className: "fa-regular fa-map" },
+    { name: "Chats" , path: "/app-chat", className:"fa-regular fa-comment-dots"}
   ];
 
   return (

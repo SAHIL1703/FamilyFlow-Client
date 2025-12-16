@@ -1,10 +1,10 @@
 import React from 'react'
-import Navbar from '../components/NavbarComponent/Navbar'
 import CreateMember from '../components/DashboardPageComponent/CreateMember'
 import GoCards from '../components/DashboardPageComponent/GoCards'
 import RoomsActivity from '../components/DashboardPageComponent/RoomsActivity'
 import OnlineMembers from '../components/DashboardPageComponent/OnlineMembers'
 import Invitations from '../components/DashboardPageComponent/Invitations'
+import Navbar from '../components/NavbarComponent/Navbar'
 
 const DashboardPage = () => {
   return (

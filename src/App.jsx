@@ -3,6 +3,10 @@ import { Route, Routes } from "react-router-dom";
 import LandingPage from "./Pages/LandingPage";
 import DashboardPage from "./Pages/DashboardPage";
 import RoomPage from "./Pages/RoomPage";
+import Navbar from "./components/NavbarComponent/Navbar";
+import InvitationsPage from "./Pages/InvitationsPage";
+import MapPage from "./Pages/MapPage";
+import ChatPage from "./Pages/ChatPage";
 
 //This is For Auth checking
 // simple auth check (replace with your auth logic/context)
@@ -19,7 +23,10 @@ const App = () => {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/app-dashboard" element={<DashboardPage />} />
-        <Route path="app-room" element={<RoomPage />}/>
+        <Route path="/app-room" element={<RoomPage />} />
+        <Route path="/app-invite" element={<InvitationsPage />} />
+        <Route path="/app-map" element={<MapPage />} />
+        <Route path="/app-chat" element={<ChatPage />} />
       </Routes>
     </>
   );
