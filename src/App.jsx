@@ -7,6 +7,7 @@ import Navbar from "./components/NavbarComponent/Navbar";
 import InvitationsPage from "./Pages/InvitationsPage";
 import MapPage from "./Pages/MapPage";
 import ChatPage from "./Pages/ChatPage";
+import LoginPage from "./Pages/LoginPage";
 
 //This is For Auth checking
 // simple auth check (replace with your auth logic/context)
@@ -27,6 +28,7 @@ const App = () => {
         <Route path="/app-invite" element={<InvitationsPage />} />
         <Route path="/app-map" element={<MapPage />} />
         <Route path="/app-chat" element={<ChatPage />} />
+        <Route path="/auth" element={<LoginPage />} />
       </Routes>
     </>
   );
