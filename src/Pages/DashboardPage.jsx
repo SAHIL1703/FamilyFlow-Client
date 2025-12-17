@@ -1,12 +1,17 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import CreateMember from '../components/DashboardPageComponent/CreateMember'
 import GoCards from '../components/DashboardPageComponent/GoCards'
 import RoomsActivity from '../components/DashboardPageComponent/RoomsActivity'
 import OnlineMembers from '../components/DashboardPageComponent/OnlineMembers'
 import Invitations from '../components/DashboardPageComponent/Invitations'
 import Navbar from '../components/NavbarComponent/Navbar'
+import { AppContext, AppProvider } from '../context/AppContext'
 
 const DashboardPage = () => {
+
+  const { user } = useContext(AppContext);
+  console.log(user);
+
   return (
     <div className="bg-gray-50 min-h-screen pb-10">
         <Navbar />

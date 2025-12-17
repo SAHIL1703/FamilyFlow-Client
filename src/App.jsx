@@ -1,4 +1,5 @@
 import React from "react";
+import { Toaster } from 'react-hot-toast'
 // 1. IMPORT Navigate and Outlet
 import { Route, Routes, Navigate, Outlet } from "react-router-dom";
 import LandingPage from "./Pages/LandingPage";
@@ -16,6 +17,7 @@ const useAuth = () => {
 
   if (!token || token === "undefined" || token === "null") {
     return false;
+    
   }
 
   return true;
@@ -32,7 +34,10 @@ const ProtectedRoutes = () => {
 
 const App = () => {
   return (
+    <div>
+    <Toaster />
     <Routes>
+      
       {/* === PUBLIC ROUTES (No Login Required) === */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/auth" element={<LoginPage />} />
@@ -47,6 +52,8 @@ const App = () => {
         <Route path="/app-chat" element={<ChatPage />} />
       </Route>
     </Routes>
+    </div>
+    
   );
 };
 
