@@ -1,6 +1,7 @@
 import React from "react";
-
+import {useNavigate} from "react-router-dom"
 const GoCards = () => {
+  const navigate = useNavigate();
   return (
     <div className="max-w-7xl mx-auto my-8 p-4">
       {/* Grid Layout: 1 col mobile, 2 col tablet, 4 col desktop */}
@@ -18,7 +19,7 @@ const GoCards = () => {
               Start a new family room for communication.
             </p>
           </div>
-          <button className="w-full py-3 rounded-lg bg-gray-50 text-gray-600 font-medium group-hover:bg-blue-600 group-hover:text-white flex justify-center items-center gap-2 transition-all duration-300">
+          <button onClick={()=>navigate('/app-room')} className="w-full py-3 rounded-lg bg-gray-50 text-gray-600 font-medium group-hover:bg-blue-600 group-hover:text-white flex justify-center items-center gap-2 transition-all duration-300">
             Create
             <i className="fa-solid fa-arrow-right transform group-hover:translate-x-1 transition-transform"></i>
           </button>
@@ -37,7 +38,7 @@ const GoCards = () => {
               Add family members to your circle.
             </p>
           </div>
-          <button className="w-full py-3 rounded-lg bg-gray-50 text-gray-600 font-medium group-hover:bg-green-600 group-hover:text-white flex justify-center items-center gap-2 transition-all duration-300">
+          <button onClick={()=> navigate('/app-invite')} className="w-full py-3 rounded-lg bg-gray-50 text-gray-600 font-medium group-hover:bg-green-600 group-hover:text-white flex justify-center items-center gap-2 transition-all duration-300">
             Invite
             <i className="fa-solid fa-arrow-right transform group-hover:translate-x-1 transition-transform"></i>
           </button>
@@ -56,7 +57,7 @@ const GoCards = () => {
               Stay connected with group messages.
             </p>
           </div>
-          <button className="w-full py-3 rounded-lg bg-gray-50 text-gray-600 font-medium group-hover:bg-orange-600 group-hover:text-white flex justify-center items-center gap-2 transition-all duration-300">
+          <button  onClick={()=> navigate('/app-chat')} className="w-full py-3 rounded-lg bg-gray-50 text-gray-600 font-medium group-hover:bg-orange-600 group-hover:text-white flex justify-center items-center gap-2 transition-all duration-300">
             Chat Now
             <i className="fa-solid fa-arrow-right transform group-hover:translate-x-1 transition-transform"></i>
           </button>
@@ -75,7 +76,7 @@ const GoCards = () => {
               Track the live location of members.
             </p>
           </div>
-          <button className="w-full py-3 rounded-lg bg-gray-50 text-gray-600 font-medium group-hover:bg-purple-600 group-hover:text-white flex justify-center items-center gap-2 transition-all duration-300">
+          <button onClick={()=>navigate('/app-map')} className="w-full py-3 rounded-lg bg-gray-50 text-gray-600 font-medium group-hover:bg-purple-600 group-hover:text-white flex justify-center items-center gap-2 transition-all duration-300">
             View Map
             <i className="fa-solid fa-arrow-right transform group-hover:translate-x-1 transition-transform"></i>
           </button>

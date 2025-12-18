@@ -3,18 +3,20 @@ import { createContext, useEffect, useState } from "react";
 export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  // ✅ Initialize state directly from localStorage to prevent "null" on refresh
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+
   const [loading, setLoading] = useState(true);
 
-  // 🔁 Restore user on page refresh
   useEffect(() => {
+    // Check if we have a token but maybe the user state was lost
     const token = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-
-    if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
+    if (!token) {
+      setUser(null);
     }
-
     setLoading(false);
   }, []);
 
@@ -36,6 +38,7 @@ export const AppProvider = ({ children }) => {
     <AppContext.Provider
       value={{
         user,
+        setUser,
         login,
         logout,
         isAuthenticated: !!user,
