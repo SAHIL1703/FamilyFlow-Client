@@ -1,4 +1,7 @@
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
+import { AppContext } from "../../context/AppContext";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 // 1. The Single Card Component
 const RoomCard = ({ room }) => {
@@ -14,10 +17,10 @@ const RoomCard = ({ room }) => {
         {/* Room Name & Stats */}
         <div>
           <h2 className="text-lg font-bold text-gray-800 leading-tight">
-            {room.name}
+            {room.roomName}
           </h2>
           <div className="flex items-center gap-2 text-sm text-gray-500">
-            <span>{room.totalMembers} Members</span>
+            <span>{room.members.length} Members</span>
             <span className="w-1 h-1 rounded-full bg-gray-300"></span>
             {/* Dynamic Online Indicator */}
             <span
@@ -53,7 +56,7 @@ const RoomCard = ({ room }) => {
       {/* --- Footer: Action Buttons --- */}
       <div className="grid grid-cols-2 gap-3 mt-auto">
         <button
-          onClick={() => console.log(`Open chat for ${room.id}`)}
+          onClick={() => console.log(`Open chat for ${room._id}`)}
           className="flex items-center justify-center gap-2 bg-gray-900 text-white py-2.5 px-4 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
         >
           <i className="fa-regular fa-comment-dots"></i>
@@ -61,7 +64,7 @@ const RoomCard = ({ room }) => {
         </button>
 
         <button
-          onClick={() => console.log(`View map for ${room.id}`)}
+          onClick={() => console.log(`View map for ${room._id}`)}
           className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 py-2.5 px-4 rounded-lg text-sm font-medium hover:bg-gray-50 hover:border-gray-300 transition-colors"
         >
           <i className="fa-solid fa-map-location-dot text-green-600"></i>
@@ -74,73 +77,104 @@ const RoomCard = ({ room }) => {
 
 // 2. The Main Container Component
 const RoomsActivity = () => {
+  const {user} = useContext(AppContext);
+  const navigate = useNavigate();
   // Dummy Data with UNIQUE IDs
-  const roomsData = [
-    {
-      id: 1,
-      name: "Pisal Family",
-      totalMembers: 8,
-      activeCount: 3,
-      lastSender: "Sahil",
-      lastMessage: "Hii how are you? Are we meeting today?",
-    },
-    {
-      id: 2,
-      name: "College Group",
-      totalMembers: 45,
-      activeCount: 0,
-      lastSender: "Aniket",
-      lastMessage: "Notes send karo koi please.",
-    },
-    {
-      id: 3,
-      name: "Goa Trip 🌴",
-      totalMembers: 5,
-      activeCount: 2,
-      lastSender: "Bhavesh",
-      lastMessage: "I have booked the hotels.",
-    },
-    {
-      id: 4,
-      name: "Office Project",
-      totalMembers: 12,
-      activeCount: 5,
-      lastSender: "Manager",
-      lastMessage: "Please update the status sheet.",
-    },
-    {
-      id: 5,
-      name: "Gym Bros",
-      totalMembers: 4,
-      activeCount: 1,
-      lastSender: "Rahul",
-      lastMessage: "Leg day today?",
-    },
-    {
-      id: 6,
-      name: "Gaming Squad",
-      totalMembers: 6,
-      activeCount: 4,
-      lastSender: "Sniper",
-      lastMessage: "Come online fast!",
-    },
-    {
-      id: 7,
-      name: "React Developers",
-      totalMembers: 120,
-      activeCount: 15,
-      lastSender: "Dev",
-      lastMessage: "How to fix useEffect loop?",
-    },
-    {
-      id: 8,
-      name: "Trekking Club",
-      totalMembers: 20,
-      activeCount: 0,
-      lastSender: "Guide",
-      lastMessage: "Next trip is on Sunday.",
-    },
-  ];
+  const [rooms , setRooms] = useState([]);
+
+  
+  useEffect(()=>{
+    //Fetch the Rooms
+    const fetchRooms =async()=>{
+      try{
+        const token = localStorage.getItem("token");
+        const {data} = await axios.get("http://localhost:3000/api/rooms/my-rooms" , {
+          headers : {Authorization : `Bearer ${token}`}
+        })
+        console.log(data.rooms)
+        if(data.success){
+          setRooms(data.rooms)
+          console.log(rooms)
+        }
+      }catch(error){
+        console.log(error.message)
+      }
+    }
+    fetchRooms();
+
+  } , [user , navigate])
+
+  // const roomsData = [
+  //   {
+  //     id: 1,
+  //     name: "Pisal Family",
+  //     totalMembers: 8,
+  //     activeCount: 3,
+  //     lastSender: "Sahil",
+  //     lastMessage: "Hii how are you? Are we meeting today?",
+  //   },
+  //   {
+  //     id: 2,
+  //     name: "College Group",
+  //     totalMembers: 45,
+  //     activeCount: 0,
+  //     lastSender: "Aniket",
+  //     lastMessage: "Notes send karo koi please.",
+  //   },
+  //   {
+  //     id: 3,
+  //     name: "Goa Trip 🌴",
+  //     totalMembers: 5,
+  //     activeCount: 2,
+  //     lastSender: "Bhavesh",
+  //     lastMessage: "I have booked the hotels.",
+  //   },
+  //   {
+  //     id: 4,
+  //     name: "Office Project",
+  //     totalMembers: 12,
+  //     activeCount: 5,
+  //     lastSender: "Manager",
+  //     lastMessage: "Please update the status sheet.",
+  //   },
+  //   {
+  //     id: 5,
+  //     name: "Gym Bros",
+  //     totalMembers: 4,
+  //     activeCount: 1,
+  //     lastSender: "Rahul",
+  //     lastMessage: "Leg day today?",
+  //   },
+  //   {
+  //     id: 6,
+  //     name: "Gaming Squad",
+  //     totalMembers: 6,
+  //     activeCount: 4,
+  //     lastSender: "Sniper",
+  //     lastMessage: "Come online fast!",
+  //   },
+  //   {
+  //     id: 7,
+  //     name: "React Developers",
+  //     totalMembers: 120,
+  //     activeCount: 15,
+  //     lastSender: "Dev",
+  //     lastMessage: "How to fix useEffect loop?",
+  //   },
+  //   {
+  //     id: 8,
+  //     name: "Trekking Club",
+  //     totalMembers: 20,
+  //     activeCount: 0,
+  //     lastSender: "Guide",
+  //     lastMessage: "Next trip is on Sunday.",
+  //   },
+  // ];
+
+  const handleClick =()=>{
+    console.log("Button Clicked")
+    navigate("/app-room")
+  }
 
   return (
     <section className="w-full mx-auto h-full flex flex-col">
@@ -152,7 +186,7 @@ const RoomsActivity = () => {
             Manage your chats and live locations
           </p>
         </div>
-        <button className="bg-green-50 text-green-600 p-2 rounded-lg hover:bg-green-100 transition shadow-sm">
+        <button onClick={handleClick} className="bg-green-50 text-green-600 p-2 rounded-lg hover:bg-green-100 transition shadow-sm">
           <i className="fa-solid fa-plus text-xl"></i>
         </button>
       </div>
@@ -167,9 +201,9 @@ const RoomsActivity = () => {
             - sm:grid-cols-2: Tablet
             - xl:grid-cols-3: Large Desktop (Since this component is wide)
         */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pb-2">
-          {roomsData.map((room) => (
-            <RoomCard key={room.id} room={room} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-2">
+          {rooms.map((room) => (
+            <RoomCard key={room._id} room={room} />
           ))}
         </div>
       </div>
