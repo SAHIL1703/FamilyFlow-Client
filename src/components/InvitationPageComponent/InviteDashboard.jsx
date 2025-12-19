@@ -1,15 +1,17 @@
-import React, { useState } from "react";
-import { 
-  Plus, 
-  X, 
-  Mail, 
-  Send, 
-  CheckCircle, 
-  Clock, 
-  XCircle, 
-  Users, 
-  Home
-} from "lucide-react"; 
+import React, { useEffect, useState } from "react";
+import {
+  Plus,
+  X,
+  Mail,
+  Send,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Users,
+  Home,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import axios from "axios";
 
 // --- MOCK DATA: Available Rooms (You would fetch this from your DB) ---
 // We need this because to create an Invite, we need a 'roomId'
@@ -21,11 +23,40 @@ const MY_ROOMS = [
 
 const InviteDashboard = () => {
   const [openForm, setOpenForm] = useState(false); // Default closed for cleaner UI
+  const [myRooms, setMyRooms] = useState([]);
+
+  const fetchUserAllRooms = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      const { data } = await axios.get(
+        "http://localhost:3000/api/rooms/my-rooms",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (data.success) {
+        // ✅ FIX 1: Instead of a for loop, use map to create your specific structure
+        const formattedRooms = data.rooms.map((room) => {
+          return [room._id, room.roomName]; // This matches your [0] and [1] logic
+        });
+
+        // ✅ FIX 2: Update the state
+        setMyRooms(formattedRooms);
+
+        console.log("Rooms fetched successfully:", formattedRooms);
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message;
+      console.error("Error fetching Rooms: ", errorMsg);
+      toast.error("Error fetching Rooms: " + errorMsg);
+    }
+  };
 
   // Form State
   const [formData, setFormData] = useState({
     email: "",
-    roomId: ""
+    roomId: "",
   });
   const [status, setStatus] = useState("idle"); // idle | loading | success
 
@@ -57,29 +88,36 @@ const InviteDashboard = () => {
     setTimeout(() => {
       setStatus("success");
       // Optional: Close form after success
-      // setTimeout(() => setOpenForm(false), 2000); 
+      // setTimeout(() => setOpenForm(false), 2000);
     }, 1500);
   };
 
+  useEffect(() => {
+    fetchUserAllRooms();
+    console.log(myRooms);
+  }, []);
+
   return (
     <div className="bg-gray-50 py-8">
-      
       {/* --- HEADER SECTION --- */}
       <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Invite Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+            Invite Dashboard
+          </h1>
           <p className="text-gray-500 mt-1">
             Manage your invitations and grow your community.
           </p>
         </div>
-        
+
         <button
           onClick={handleOpeningForm}
           className={`
             flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold shadow-md transition-all duration-300 active:scale-95
-            ${openForm 
-              ? "bg-gray-200 text-gray-700 hover:bg-gray-300" 
-              : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/30"
+            ${
+              openForm
+                ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                : "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/30"
             }
           `}
         >
@@ -89,78 +127,99 @@ const InviteDashboard = () => {
       </div>
 
       {/* --- THE INVITE FORM (Collapsible) --- */}
-      <div className={`max-w-7xl mx-auto px-4 overflow-hidden transition-all duration-500 ease-in-out ${openForm ? 'max-h-[500px] opacity-100 mb-8' : 'max-h-0 opacity-0'}`}>
+      <div
+        className={`max-w-7xl mx-auto px-4 overflow-hidden transition-all duration-500 ease-in-out ${
+          openForm ? "max-h-[500px] opacity-100 mb-8" : "max-h-0 opacity-0"
+        }`}
+      >
         <div className="bg-white rounded-2xl border border-blue-100 p-6 md:p-8">
-            
-            <div className="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4">
-              <div className="bg-blue-100 p-2 rounded-lg">
-                <Send className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Send Invitation</h2>
-                <p className="text-sm text-gray-500">The user will receive an email to join your room.</p>
+          <div className="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4">
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <Send className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">
+                Send Invitation
+              </h2>
+              <p className="text-sm text-gray-500">
+                The user will receive an email to join your room.
+              </p>
+            </div>
+          </div>
+
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col md:flex-row gap-6 items-start"
+          >
+            {/* 1. Select Room (Required by Schema: roomId) */}
+            <div className="w-full md:w-1/3 space-y-2">
+              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Home className="w-4 h-4 text-gray-400" /> Select Room
+              </label>
+              <div className="relative">
+                <select
+                  required
+                  value={formData.roomId}
+                  onChange={(e) =>
+                    setFormData({ ...formData, roomId: e.target.value })
+                  }
+                  className="w-full appearance-none bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block p-3 pr-8 outline-none transition-all"
+                >
+                  <option value="" disabled>
+                    Choose a room...
+                  </option>
+                  {myRooms.map((room) => (
+                    <option key={room[0]} value={room[0]}>
+                      {room[1]}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                  </svg>
+                </div>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-6 items-start">
-              
-              {/* 1. Select Room (Required by Schema: roomId) */}
-              <div className="w-full md:w-1/3 space-y-2">
-                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  <Home className="w-4 h-4 text-gray-400" /> Select Room
-                </label>
-                <div className="relative">
-                  <select
-                    required
-                    value={formData.roomId}
-                    onChange={(e) => setFormData({...formData, roomId: e.target.value})}
-                    className="w-full appearance-none bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block p-3 pr-8 outline-none transition-all"
-                  >
-                    <option value="" disabled>Choose a room...</option>
-                    {MY_ROOMS.map(room => (
-                      <option key={room._id} value={room._id}>{room.name}</option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-                    <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
-                  </div>
-                </div>
-              </div>
+            {/* 2. Email Input (Required by Schema: receiverEmail) */}
+            <div className="w-full md:w-1/2 space-y-2">
+              <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                <Mail className="w-4 h-4 text-gray-400" /> Receiver Email
+              </label>
+              <input
+                type="email"
+                required
+                placeholder="friend@example.com"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full p-3 outline-none transition-all"
+              />
+            </div>
 
-              {/* 2. Email Input (Required by Schema: receiverEmail) */}
-              <div className="w-full md:w-1/2 space-y-2">
-                <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-gray-400" /> Receiver Email
-                </label>
-                <input 
-                  type="email" 
-                  required
-                  placeholder="friend@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full p-3 outline-none transition-all"
-                />
-              </div>
-
-              {/* Submit Button */}
-              <div className="w-full md:w-auto mt-auto pt-7">
-                <button 
-                  type="submit"
-                  disabled={status === 'loading'}
-                  className={`
+            {/* Submit Button */}
+            <div className="w-full md:w-auto mt-auto pt-7">
+              <button
+                type="submit"
+                disabled={status === "loading"}
+                className={`
                     w-full md:w-auto px-8 py-3 rounded-xl font-bold text-white shadow-md transition-all flex items-center justify-center gap-2
-                    ${status === 'success' 
-                      ? "bg-green-500 hover:bg-green-600" 
-                      : "bg-gray-900 hover:bg-black hover:shadow-gray-500/30"
+                    ${
+                      status === "success"
+                        ? "bg-green-500 hover:bg-green-600"
+                        : "bg-gray-900 hover:bg-black hover:shadow-gray-500/30"
                     }
                   `}
-                >
-                  {status === 'loading' && <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>}
-                  {status === 'success' ? "Invite Sent!" : "Send Invite"}
-                </button>
-              </div>
-
-            </form>
+              >
+                {status === "loading" && (
+                  <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
+                )}
+                {status === "success" ? "Invite Sent!" : "Send Invite"}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 
@@ -170,7 +229,6 @@ const InviteDashboard = () => {
 
       {/* --- STATISTICS CARDS --- */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 max-w-7xl mx-auto gap-6 px-4 my-8">
-        
         {/* Total Invites */}
         <div className="group bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:border-blue-200 transition-all duration-300">
           <div className="flex justify-between items-start">
@@ -222,7 +280,6 @@ const InviteDashboard = () => {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

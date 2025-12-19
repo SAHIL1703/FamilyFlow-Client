@@ -6,21 +6,23 @@ import toast from "react-hot-toast";
 
 const CreateMember = () => {
   const navigate = useNavigate();
-  const { user } = useContext(AppContext);
+  const { user  , loading} = useContext(AppContext);
   const [pendingInviteCount, setPendingInviteCount] = useState(0);
   const [totalMembersCount, setTotalMembersCount] = useState(0);
 
   // 1. Derived State: These values are calculated directly from the 'user' object.
   // This avoids the "Identifier already declared" error and keeps code clean.
 
-  const activeRoomsCount = user?.roomsJoined?.length || 0;
+  const activeRoomsCount = user?.roomsJoined?.length  || 0;
   const createdRoomsCount = user?.roomCreated?.length || 0;
 
   // 2. Handle Redirects and API calls in useEffect
   useEffect(() => {
-    if (!user) {
-      navigate("/auth");
+    if (loading) {
       return;
+    }
+    if(!user){
+      navigate("/auth");
     }
 
     //Fetch the totalMembersCount
@@ -76,7 +78,7 @@ const CreateMember = () => {
     fetchTotalMembersCount();
     fetchPendingInvitations();
     
-  }, [user, navigate]);
+  }, [user,loading,navigate]);
 
   // If user is null, don't render UI to prevent flashes of empty content
   if (!user) return null;

@@ -1,47 +1,79 @@
-import React, { useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import Navbar from '../components/NavbarComponent/Navbar';
 import Form from '../components/RoomPageComponent/Form';
 import RoomDashboard from '../components/RoomPageComponent/RoomDashboard';
+import { AppContext } from '../context/AppContext';
+import axios from 'axios';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 const RoomPage = () => {
+  const navigate = useNavigate();
   const [isFormOpen, setIsFormOpen] = useState(false);
-
-  // MOCK DATA: Matching your Mongoose Schema precisely
-  const [rooms, setRooms] = useState([
-    {
-      _id: "65cb...01",
-      roomName: "Engineering Team 🛠️",
-      description: "Daily standups and technical architecture discussions.",
-      createdBy: "user_99", // This matches the Schema 'createdBy'
-      members: ["user_99", "user_101", "user_102"],
-      presentUsers: ["user_99"],
-      chats: [],
-      createdAt: "2024-02-10T10:00:00Z"
-    },
-    {
-      _id: "65cb...02",
-      roomName: "Family Lounge 🏠",
-      description: "Sharing photos and weekend plans.",
-      createdBy: "user_different",
-      members: ["user_99", "user_other"],
-      presentUsers: [],
-      chats: ["msg_001", "msg_002"],
-      createdAt: "2024-01-05T14:30:00Z"
+  const { user } = useContext(AppContext);
+  const [rooms, setRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    
+    // If no token, redirect to login immediately
+    if (!token) {
+      navigate('/login');
+      return;
     }
-  ]);
+
+    const fetchRoomsData = async () => {
+      try {
+        const { data } = await axios.get("http://localhost:3000/api/rooms/my-rooms", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (data.success) {
+          setRooms(data.rooms);
+        }
+      } catch (error) {
+        const errorMsg = error.response?.data?.message || error.message;
+        console.error("Error fetching rooms:", errorMsg);
+        toast.error("Failed to load rooms");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRoomsData();
+    
+    // We remove [user, navigate] here. 
+    // [] ensures this only runs ONCE when the component mounts.
+  }, []); 
 
   const toggleForm = () => setIsFormOpen(!isFormOpen);
 
+  // FIX: Safety check for the user. If user is null, we show a loader or return null.
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500"></div>
+      </div>
+    );
+  }  
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <Navbar />
       
-      {/* Passing isOpen to control the slide-down animation */}
-      <Form isOpen={isFormOpen} onClose={toggleForm} />
+      {/* TIP: Pass setRooms to Form so that when a room is created, 
+         you can update the list without a fresh API call 
+      */}
+      <Form 
+        isOpen={isFormOpen} 
+        onClose={toggleForm} 
+        setRooms={setRooms}
+      />
 
       <RoomDashboard 
         rooms={rooms} 
-        currentUserId="user_99" // Example: The logged-in user
+        setRooms={setRooms}
+        isLoading={loading}
+        currentUserId={user._id} 
         onCreateClick={toggleForm} 
       />
     </div>
