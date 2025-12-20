@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Plus,
   X,
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { AppContext } from "../../context/AppContext";
 
 // --- MOCK DATA: Available Rooms (You would fetch this from your DB) ---
 // We need this because to create an Invite, we need a 'roomId'
@@ -21,30 +22,29 @@ const MY_ROOMS = [
   { _id: "room_103", name: "Project Alpha" },
 ];
 
-const InviteDashboard = () => {
+const InviteDashboard = ({stats}) => {
   const [openForm, setOpenForm] = useState(false); // Default closed for cleaner UI
   const [myRooms, setMyRooms] = useState([]);
+  const { user } = useContext(AppContext);
 
   const fetchUserAllRooms = async () => {
+    // 1. Guard Clause: Don't run if user isn't loaded yet
+    if (!user || !user._id) return;
+
     const token = localStorage.getItem("token");
     try {
       const { data } = await axios.get(
         "http://localhost:3000/api/rooms/my-rooms",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (data.success) {
-        // ✅ FIX 1: Instead of a for loop, use map to create your specific structure
-        const formattedRooms = data.rooms.map((room) => {
-          return [room._id, room.roomName]; // This matches your [0] and [1] logic
-        });
+        // Now user._id is guaranteed to exist here
+        const formattedRooms = data.rooms
+          .filter((room) => room.createdBy._id === user._id)
+          .map((room) => [room._id, room.roomName]);
 
-        // ✅ FIX 2: Update the state
         setMyRooms(formattedRooms);
-
-        console.log("Rooms fetched successfully:", formattedRooms);
       }
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.message;
@@ -69,7 +69,7 @@ const InviteDashboard = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
     if (!formData.email || !formData.roomId) return;
 
@@ -83,19 +83,34 @@ const InviteDashboard = () => {
       // senderId is usually handled by the backend via the Auth Token (req.user._id)
     };
 
-    console.log("Submitting Payload to /api/invitations:", payload);
-
-    setTimeout(() => {
-      setStatus("success");
-      // Optional: Close form after success
-      // setTimeout(() => setOpenForm(false), 2000);
-    }, 1500);
+    try {
+      const token = localStorage.getItem("token");
+      const {data} = await axios.post("http://localhost:3000/api/invites/send" , payload,{
+        headers : {Authorization : `Bearer ${token}`}
+      })
+      console.log(data);
+      if(data.success){
+         setStatus("success");
+         setFormData({
+          email : "",
+          roomId : ""
+         })
+         setStatus("idle")
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message;
+      console.error("Error Sending Invite ", errorMsg);
+      toast.error("Error Sending Invite " + errorMsg);
+      setStatus("idle")
+    }
   };
 
   useEffect(() => {
-    fetchUserAllRooms();
-    console.log(myRooms);
-  }, []);
+    if (user) {
+      fetchUserAllRooms();
+      console.log("User : ", user);
+    }
+  }, [user]);
 
   return (
     <div className="bg-gray-50 py-8">
@@ -234,7 +249,7 @@ const InviteDashboard = () => {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-gray-500 font-medium text-sm">Total Sent</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">24</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.total}</p>
             </div>
             <div className="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:scale-110 transition-transform">
               <Send className="w-6 h-6" />
@@ -247,7 +262,7 @@ const InviteDashboard = () => {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-gray-500 font-medium text-sm">Accepted</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">12</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.accepted}</p>
             </div>
             <div className="p-3 bg-green-50 text-green-600 rounded-xl group-hover:scale-110 transition-transform">
               <CheckCircle className="w-6 h-6" />
@@ -260,7 +275,7 @@ const InviteDashboard = () => {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-gray-500 font-medium text-sm">Pending</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">3</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.pending}</p>
             </div>
             <div className="p-3 bg-amber-50 text-amber-600 rounded-xl group-hover:scale-110 transition-transform">
               <Clock className="w-6 h-6" />
@@ -273,7 +288,7 @@ const InviteDashboard = () => {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-gray-500 font-medium text-sm">Rejected</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">8</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.rejected}</p>
             </div>
             <div className="p-3 bg-red-50 text-red-600 rounded-xl group-hover:scale-110 transition-transform">
               <XCircle className="w-6 h-6" />

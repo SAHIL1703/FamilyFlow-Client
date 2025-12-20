@@ -24,7 +24,6 @@ const CreateMember = () => {
     if(!user){
       navigate("/auth");
     }
-
     //Fetch the totalMembersCount
     const fetchTotalMembersCount = async () => {
       try {
