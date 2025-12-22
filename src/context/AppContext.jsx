@@ -50,7 +50,6 @@
 //   );
 // };
 
-
 import { createContext, useEffect, useState } from "react";
 import axios from "axios";
 
@@ -59,17 +58,16 @@ export const AppContext = createContext();
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // 📍 NEW: Global Location State
+  const [userLocation, setUserLocation] = useState(null); // Stores [lat, lng]
 
-  // ==========================
-  // LOAD USER ON APP START
-  // ==========================
   useEffect(() => {
     loadUser();
   }, []);
 
   const loadUser = async () => {
     const token = localStorage.getItem("token");
-
     if (!token) {
       setLoading(false);
       return;
@@ -78,13 +76,8 @@ export const AppProvider = ({ children }) => {
     try {
       const { data } = await axios.get(
         "http://localhost:3000/api/auth/me",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setUser(data.user);
     } catch (error) {
       console.error("Auth failed", error);
@@ -95,20 +88,15 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // ==========================
-  // LOGIN (🔥 FIXED)
-  // ==========================
   const login = async (token) => {
     localStorage.setItem("token", token);
-    await loadUser(); // 👈 THIS WAS MISSING
+    await loadUser();
   };
 
-  // ==========================
-  // LOGOUT
-  // ==========================
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
+    setUserLocation(null); // Clear location on logout
   };
 
   return (
@@ -119,10 +107,12 @@ export const AppProvider = ({ children }) => {
         login,
         logout,
         isAuthenticated: !!user,
+        // 📍 NEW: Export location helpers
+        userLocation,
+        setUserLocation
       }}
     >
       {children}
     </AppContext.Provider>
   );
 };
-
