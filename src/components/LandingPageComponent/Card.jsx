@@ -1,46 +1,40 @@
 import React from "react";
 
 const Card = () => {
+  // Highlights Section (3 Items)
+  const items = [
+    {
+      title: "Family Rooms",
+      desc: "Create private spaces for your family groups. Invite members with a simple secure link.",
+      icon: "fa-house-chimney-window",
+      color: "blue",
+    },
+    {
+      title: "Real-time Chat",
+      desc: "Instant messaging keeps everyone in the loop, no matter where they are in the world.",
+      icon: "fa-comments",
+      color: "amber",
+    },
+    {
+      title: "Live Location",
+      desc: "See your family's location on the map in real-time for ultimate peace of mind.",
+      icon: "fa-map-location-dot",
+      color: "blue",
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 max-w-6xl mx-auto">
-      {/* --- CARD 1 --- */}
-      <div className="group border border-blue-50 bg-white shadow-xl shadow-blue-100/50 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-        <span className="inline-flex justify-center items-center h-16 w-16 bg-blue-100 rounded-lg mb-6 group-hover:bg-blue-200 transition-colors">
-          <i className="text-3xl text-blue-600 fa-solid fa-house-chimney-window"></i>
-        </span>
-
-        <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Family Rooms</h3>
-        <p className="text-gray-500 leading-relaxed">
-          Create private spaces for your family. Invite members with a simple
-          link.
-        </p>
-      </div>
-
-      {/* --- CARD 2 --- */}
-      <div className="group border border-amber-50 bg-white shadow-xl shadow-amber-100/50 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-        <span className="inline-flex justify-center items-center h-16 w-16 bg-amber-100 rounded-lg mb-6 group-hover:bg-amber-200 transition-colors">
-          <i className="text-3xl text-amber-600 fa-regular fa-comment-dots"></i>
-        </span>
-
-        <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-          Real-time Chat
-        </h3>
-        <p className="text-gray-500 leading-relaxed">
-          Instant messaging keeps everyone in the loop, no matter where they
-          are.
-        </p>
-      </div>
-
-      {/* --- CARD 3 --- */}
-      <div className="group border border-blue-50 bg-white shadow-xl shadow-blue-100/50 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-        <span className="inline-flex justify-center items-center h-16 w-16 bg-blue-100 rounded-lg mb-6 group-hover:bg-blue-200 transition-colors">
-          <i className="text-3xl text-blue-600 fa-solid fa-location-arrow"></i>
-        </span>
-
-        <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Live Location</h3>
-        <p className="text-gray-500 leading-relaxed">
-          See your family's location on the map in real-time for peace of mind.
-        </p>
+    <div className="max-w-6xl mx-auto px-4 pb-20">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {items.map((item, idx) => (
+          <div key={idx} className={`group p-8 rounded-3xl bg-white border border-${item.color}-50 shadow-xl shadow-slate-200/50 hover:-translate-y-2 hover:shadow-2xl transition-all duration-300`}>
+            <div className={`w-14 h-14 rounded-2xl bg-${item.color}-50 flex items-center justify-center text-${item.color}-500 mb-6 group-hover:scale-110 transition-transform`}>
+              <i className={`fa-solid ${item.icon} text-2xl`}></i>
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-3">{item.title}</h3>
+            <p className="text-slate-500 leading-relaxed">{item.desc}</p>
+          </div>
+        ))}
       </div>
     </div>
   );

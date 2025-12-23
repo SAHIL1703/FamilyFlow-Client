@@ -1,12 +1,12 @@
 import React from 'react'
-import Hero from './Hero'
-import Cards from './Cards'
+import FeatureHeader from './FeatureHeader' // Renamed to avoid conflict
+import FeatureGrid from './FeatureGrid'    // Renamed for clarity
 
 const Feature = () => {
   return (
-    <div className='bg-gray-50 my-2'>
-        <Hero />
-        <Cards />      
+    <div className="bg-slate-50 py-24">
+        <FeatureHeader />
+        <FeatureGrid />      
     </div>
   )
 }

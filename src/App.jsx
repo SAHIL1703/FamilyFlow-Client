@@ -1,10 +1,12 @@
-import React, { useEffect, useContext } from "react";
+import React, { useEffect, useContext, useRef } from "react";
 import { Toaster } from 'react-hot-toast';
 import { Route, Routes, Navigate, Outlet } from "react-router-dom";
-import { io } from "socket.io-client";
+
+// IMPORT SHARED SOCKET
+import { socket } from "./socket"; 
 
 // Context & Pages
-import { AppContext } from "./context/AppContext"; // Ensure this path is correct
+import { AppContext } from "./context/AppContext";
 import LandingPage from "./Pages/LandingPage";
 import DashboardPage from "./Pages/DashboardPage";
 import RoomPage from "./Pages/RoomPage";
@@ -12,9 +14,9 @@ import InvitationsPage from "./Pages/InvitationsPage";
 import MapPage from "./Pages/MapPage";
 import ChatPage from "./Pages/ChatPage";
 import LoginPage from "./Pages/LoginPage";
-
-// Initialize Socket.io (Connects once when the app starts)
-const socket = io("http://localhost:3000");
+import FeaturePage from "./Pages/FeaturePage";
+import AboutPage from "./Pages/AboutPage";
+import TeamPage from "./Pages/TeamPage";
 
 // 1. AUTH LOGIC
 const useAuth = () => {
@@ -30,44 +32,61 @@ const ProtectedRoutes = () => {
 
 const App = () => {
   const { user, setUserLocation } = useContext(AppContext);
+  
+  // Ref to hold latest GPS data (avoids stale closures in setInterval)
+  const locationRef = useRef({ lat: null, lng: null });
 
-  // 3. GLOBAL REAL-TIME TRACKING
+  // 3. SETUP SOCKET & TRACKING
   useEffect(() => {
-    // Only start tracking if a user is logged in
+    // Only run if user is logged in
     if (!user?._id) return;
 
-    console.log("🛰️ Global tracking active for:", user.username);
+    // A. Connect & Identify User
+    if (!socket.connected) socket.connect();
+    socket.emit("setup_socket", user._id);
+    console.log("🔌 Socket Setup Emitted for:", user.username);
 
+    // B. Start GPS Watcher
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
-
-        // A. Update Global Context (so the Map can access your live pos)
+        // Update Ref for the Interval
+        locationRef.current = { lat: latitude, lng: longitude };
+        
+        // Update Global Context (for immediate UI use)
         if (setUserLocation) {
           setUserLocation([latitude, longitude]);
         }
-
-        // B. Send to Server (Server broadcasts to all user's rooms)
-        socket.emit("send_location", {
-          userId: user._id,
-          latitude,
-          longitude,
-        });
       },
       (err) => {
         console.warn(`GPS Warning (${err.code}): ${err.message}`);
       },
       {
         enableHighAccuracy: true,
-        timeout: 30000, // 30 seconds to lock onto satellite
-        maximumAge: 10000, // Use location if it's less than 10s old
+        timeout: 30000,
+        maximumAge: 0, // Force fresh data
       }
     );
 
-    // Cleanup when user logs out or app closes
+    // C. Interval: Send Location every 5 Seconds
+    const intervalId = setInterval(() => {
+        const { lat, lng } = locationRef.current;
+        
+        if (lat && lng) {
+            // console.log("📍 Sending 5s Update:", lat, lng);
+            socket.emit("send_location", {
+                userId: user._id,
+                latitude: lat,
+                longitude: lng,
+            });
+        }
+    }, 5000);
+
+    // Cleanup on logout/unmount
     return () => {
-      console.log("🛑 Global tracking stopped");
+      console.log("🛑 Cleaning up App effects");
       navigator.geolocation.clearWatch(watchId);
+      clearInterval(intervalId);
     };
   }, [user?._id, setUserLocation]);
 
@@ -79,6 +98,9 @@ const App = () => {
         {/* === PUBLIC ROUTES === */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/auth" element={<LoginPage />} />
+        <Route path="/features" element={<FeaturePage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/team" element={<TeamPage />} />
 
         {/* === PRIVATE ROUTES === */}
         <Route element={<ProtectedRoutes />}>

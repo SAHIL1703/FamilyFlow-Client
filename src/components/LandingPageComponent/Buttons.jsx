@@ -1,14 +1,15 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const Buttons = () => {
   return (
-    <div className="mx-4 sm:mx-auto flex flex-col sm:flex-row justify-center items-center gap-4 my-8 ">
-      <button className="cursor-pointer flex gap-1 justify-center items-center w-full sm:flex sm:items-center sm:justify-center sm:w-60 px-6 py-2.5 bg-blue-500 text-white font-semibold rounded-md shadow-lg hover:bg-blue-600 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm transition-all duration-200">
-        Sign In
+    <div className="flex flex-col sm:flex-row justify-center items-center gap-4 px-4 mb-20">
+      <Link to="/auth" className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 text-white font-bold rounded-xl shadow-xl shadow-blue-200 hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-2">
+        Start for Free
         <i className="fa-solid fa-arrow-right"></i>
-      </button>
+      </Link>
 
-      <button className="cursor-pointer w-full sm:w-60 px-6 py-2.5 border-2 border-blue-500 rounded-md  font-semibold text-blue-500 hover:bg-blue-50 hover:border-blue-600 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm transition-all duration-200 ">
+      <button className="w-full sm:w-auto px-8 py-3.5 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-xl hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 transition-all">
         See How It Works
       </button>
     </div>

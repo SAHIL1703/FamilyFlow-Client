@@ -4,43 +4,36 @@ import { Link } from "react-router-dom";
 const Navbar = () => {
   const navItems = [
     { name: "Home", path: "/" },
-    { name: "Feature", path: "/features" },
+    { name: "Features", path: "/features" },
     { name: "About", path: "/about" },
     { name: "Team", path: "/team" },
   ];
 
   const [menu, setMenu] = useState(false);
 
-  const changeMenu = () => {
-    setMenu(!menu);
-  };
-
   return (
-    <div className="sticky top-0 z-50 bg-white shadow-sm relative">
-      <div className="flex items-center justify-between py-4 px-4 md:px-8 ">
+    <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-100">
+      <div className="flex items-center justify-between py-4 px-4 md:px-8 max-w-7xl mx-auto">
         {/* Logo */}
-        <div className="flex items-center gap-1.5 cursor-pointer select-none">
-          {" "}
-          {/* Reduced gap */}
+        <Link to="/" className="flex items-center gap-2 cursor-pointer select-none">
           <img
-            className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 object-contain" /* Smaller image on mobile */
-            src="familyflow_logo_tree.jpg"
-            alt="Logo"
+            className="h-10 w-10 object-cover rounded-full border border-slate-200"
+            src="/familyflow_logo_tree.jpg" // Ensure this is in your public folder
+            alt="FamilyFlow"
           />
-          <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-wide text-gray-800">
-            {/* text-lg fits much better on small phones than text-xl */}
+          <h1 className="text-xl md:text-2xl font-bold tracking-tight text-slate-800">
             Family<span className="text-amber-500">Flow</span>
           </h1>
-        </div>
+        </Link>
 
-        {/* Navigation Links (Desktop) */}
+        {/* Desktop Links */}
         <div className="hidden md:flex">
-          <ul className="flex items-center gap-8 text-gray-600 font-medium">
+          <ul className="flex items-center gap-8 text-slate-600 font-medium">
             {navItems.map((item) => (
               <li key={item.name}>
                 <Link
                   to={item.path}
-                  className="cursor-pointer hover:text-amber-500 transition-colors duration-300"
+                  className="hover:text-amber-500 transition-colors duration-300"
                 >
                   {item.name}
                 </Link>
@@ -49,69 +42,49 @@ const Navbar = () => {
           </ul>
         </div>
 
-        {/* Buttons (Desktop) */}
-        <div className="hidden md:flex items-center justify-end gap-4">
-          <button className="px-4 py-2 font-semibold rounded-2xl hover:bg-blue-200 hover:text-amber-500 transition-all duration-200">
+        {/* Desktop Buttons */}
+        <div className="hidden md:flex items-center gap-4">
+          <Link to="/auth" className="px-5 py-2 font-semibold text-slate-600 hover:text-amber-600 transition-colors">
             Sign In
-          </button>
-
-          <button className="px-5 py-2 rounded-lg bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors duration-200 ">
+          </Link>
+          <Link to="/auth" className="px-6 py-2.5 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 shadow-lg shadow-amber-200 hover:shadow-xl transition-all">
             Get Started
-          </button>
+          </Link>
         </div>
 
-        {/* Hamburger Icon */}
-        <button onClick={changeMenu} className="sm:block md:hidden z-50">
-          <span>
-            {/* Swapping icons based on state */}
-            {menu ? (
-              <i className="fa-solid fa-x text-2xl"></i>
-            ) : (
-              <i className="fa-solid fa-bars text-2xl"></i>
-            )}
-          </span>
+        {/* Mobile Toggle */}
+        <button onClick={() => setMenu(!menu)} className="md:hidden text-slate-700">
+          <i className={`fa-solid ${menu ? "fa-xmark" : "fa-bars"} text-2xl`}></i>
         </button>
       </div>
 
-      {/* ========================================== */}
-      {/* ANIMATED DROPDOWN SECTION           */}
-      {/* ========================================== */}
-
-      {/* 1. We removed the `{menu ? ...}` conditional render.
-         2. We added a wrapper grid div.
-         3. We transition grid-rows from 0fr (closed) to 1fr (open).
-      */}
+      {/* Mobile Menu */}
       <div
-        className={`md:hidden grid overflow-hidden transition-all duration-300 ease-in-out ${
-          menu ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        className={`md:hidden overflow-hidden transition-all duration-300 ${
+          menu ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
-        <div className="min-h-0">
-          {" "}
-          {/* Inner container needed for the grid trick */}
-          <div className="border-b-gray-500">
-            <ul className="text-gray-600 font-medium px-4 md:px-8 flex flex-col">
-              {navItems.map((item) => (
-                <li key={item.name} className="py-4">
-                  <Link
-                    to={item.path}
-                    onClick={() => setMenu(false)} // Close menu when link clicked
-                    className="cursor-pointer hover:text-amber-500 transition-colors duration-300"
-                  >
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="flex flex-col py-4 border-t-gray-500 space-y-3 px-4 md:px-8 pb-6">
-            <button className="px-4 py-2 font-semibold rounded-2xl border border-amber-500">
+        <div className="bg-white border-t border-slate-100 px-4 pb-6 pt-2 shadow-lg">
+          <ul className="space-y-4 mb-6">
+            {navItems.map((item) => (
+              <li key={item.name}>
+                <Link
+                  to={item.path}
+                  onClick={() => setMenu(false)}
+                  className="block text-lg font-medium text-slate-600 hover:text-amber-500"
+                >
+                  {item.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="flex flex-col gap-3">
+            <Link to="/auth" className="w-full py-3 rounded-xl border border-slate-200 text-center font-semibold text-slate-700">
               Sign In
-            </button>
-
-            <button className="px-5 py-2 rounded-lg bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors duration-200 ">
+            </Link>
+            <Link to="/auth" className="w-full py-3 rounded-xl bg-amber-500 text-white text-center font-semibold shadow-md">
               Get Started
-            </button>
+            </Link>
           </div>
         </div>
       </div>

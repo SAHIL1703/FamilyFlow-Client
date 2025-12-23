@@ -5,29 +5,25 @@ import {
   Marker,
   Popup,
   useMap,
-  Polyline,
 } from "react-leaflet";
 import {
-  Navigation,
   Search,
-  MapPin,
-  ChevronRight,
   ArrowLeft,
-  Maximize,
   Compass,
   User,
   Activity,
+  Navigation
 } from "lucide-react";
-import { AppContext } from "../../context/AppContext"; // Import your user context
-import { io } from "socket.io-client";
+import { AppContext } from "../../context/AppContext";
 import axios from "axios";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import "leaflet-routing-machine";
 
-const socket = io("http://localhost:3000");
+// IMPORT SHARED SOCKET
+import { socket } from "../../socket";
 
-// --- MAP UTILS ---
+// --- 1. MAP INVALIDATOR (Fixes Grey Tiles on resize) ---
 const MapInvalidator = ({ isMobileListVisible }) => {
   const map = useMap();
   useEffect(() => {
@@ -39,135 +35,163 @@ const MapInvalidator = ({ isMobileListVisible }) => {
   return null;
 };
 
-// Dynamic Routing between ME and CLICKED USER
+// --- 2. OPTIMIZED ROUTING LAYER (Fixes the Crash) ---
 const RoutingLayer = ({ me, target }) => {
   const map = useMap();
-  const routingRef = useRef(null);
+  const routingControlRef = useRef(null);
 
+  // A. Initialize Control ONCE when map loads
   useEffect(() => {
-    if (!map || !me || !target) return;
+    if (!map) return;
 
-    // Remove old route if exists
-    if (routingRef.current) {
-      map.removeControl(routingRef.current);
-    }
-
-    routingRef.current = L.Routing.control({
-      waypoints: [L.latLng(me[0], me[1]), L.latLng(target[0], target[1])],
+    // Create the control instance
+    routingControlRef.current = L.Routing.control({
+      waypoints: [], // Start empty
       routeWhileDragging: false,
       addWaypoints: false,
-      show: false,
-      createMarker: () => null, // Don't show extra markers
+      show: false, // Hide text instructions
+      fitSelectedRoutes: false, // Don't auto-zoom constantly
+      createMarker: () => null, // Hide default markers (we use our own)
       lineOptions: {
         styles: [
           { color: "#6366f1", weight: 5, opacity: 0.7, dashArray: "10, 10" },
         ],
       },
-    }).addTo(map);
+      // Explicitly set OSRM service (removes ambiguity)
+      serviceUrl: 'https://router.project-osrm.org/route/v1',
+      router: new L.Routing.OSRMv1({
+         serviceUrl: 'https://router.project-osrm.org/route/v1'
+      })
+    });
+    
+    routingControlRef.current.addTo(map);
 
+    // Cleanup: Safely remove control
     return () => {
-      if (routingRef.current) map.removeControl(routingRef.current);
+      if (map && routingControlRef.current) {
+        try {
+          map.removeControl(routingControlRef.current);
+        } catch (error) {
+          console.warn("Routing cleanup handled gracefully");
+        }
+      }
     };
-  }, [map, me, target]);
+  }, [map]); 
+
+  // B. Update Waypoints Dynamicallly (No crashing)
+  useEffect(() => {
+    if (!routingControlRef.current || !me || !target) return;
+
+    try {
+        const waypoints = [
+            L.latLng(me[0], me[1]),
+            L.latLng(target[0], target[1])
+        ];
+        routingControlRef.current.setWaypoints(waypoints);
+    } catch (error) {
+        console.error("Error updating route:", error);
+    }
+
+  }, [me, target]); // Only run this when coordinates change
 
   return null;
 };
 
+// --- 3. MAIN COMPONENT ---
 const RoomMemberMap = () => {
   const { user } = useContext(AppContext);
   const [rooms, setRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  
+  // State for Map Data
   const [membersLocation, setMembersLocation] = useState({});
+  const [onlineStatus, setOnlineStatus] = useState({}); // { userId: "online" | "offline" }
+
   const [targetUser, setTargetUser] = useState(null);
   const [isMobileListVisible, setIsMobileListVisible] = useState(true);
 
-  // 1. GLOBAL TRACKING: Starts as soon as user is available
+  // --- SOCKET LISTENERS ---
   useEffect(() => {
-    if (!user?._id) return;
-
-    const watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setMembersLocation((prev) => ({
-          ...prev,
-          [user._id]: [latitude, longitude],
-        }));
-
-        socket.emit("send_location", {
-          userId: user._id,
-          latitude,
-          longitude,
-        });
-      },
-      (err) => {
-        // Handle the timeout gracefully
-        if (err.code === 3) {
-          console.warn("GPS Timeout: Retrying to find signal...");
-        } else {
-          console.error("GPS Error:", err.message);
-        }
-      },
-      {
-        enableHighAccuracy: true, // Keep this true for better precision
-        timeout: 30000, // Increase to 30 seconds
-        maximumAge: 10000, // Accept a location cached in the last 10 seconds
-      }
-    );
-
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [user?._id]); // Only depends on user ID, not selectedRoom
-
-  // 2. SOCKET LISTENER: Always listening for anyone in any of your rooms
-  useEffect(() => {
-    socket.on("receive_location", (data) => {
+    // 1. Receive Location Update
+    const handleReceiveLocation = (data) => {
       setMembersLocation((prev) => ({
         ...prev,
         [data.userId]: [data.latitude, data.longitude],
       }));
-    });
-    return () => socket.off("receive_location");
+      // If sending location, they are online
+      setOnlineStatus((prev) => ({ ...prev, [data.userId]: "online" }));
+    };
+
+    // 2. Receive Status Change (Online/Offline)
+    const handleStatusChange = (data) => {
+        // console.log(`User ${data.userId} is now ${data.status}`);
+        setOnlineStatus((prev) => ({
+            ...prev,
+            [data.userId]: data.status 
+        }));
+    };
+
+    socket.on("receive_location", handleReceiveLocation);
+    socket.on("user_status_change", handleStatusChange);
+
+    return () => {
+      socket.off("receive_location", handleReceiveLocation);
+      socket.off("user_status_change", handleStatusChange);
+    };
   }, []);
 
-  // 3. FETCH ROOMS & INITIAL LOCATIONS
+  // --- FETCH ROOMS ---
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchRooms = async () => {
       try {
         const token = localStorage.getItem("token");
         const { data } = await axios.get(
           "http://localhost:3000/api/rooms/my-rooms",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         if (data.success) {
           setRooms(data.rooms);
-
-          // Optimization: Set initial positions from member data if available
-          const initialLocs = {};
-          data.rooms.forEach((room) => {
-            room.members.forEach((m) => {
-              if (m.location?.latitude) {
-                initialLocs[m._id] = [
-                  m.location.latitude,
-                  m.location.longitude,
-                ];
-              }
-            });
+          
+          // Initial Offline/Online status from DB
+          const initialStatus = {};
+          data.rooms.forEach(room => {
+             room.members.forEach(m => {
+                 initialStatus[m._id] = m.isOnline ? "online" : "offline";
+             });
           });
-          setMembersLocation((prev) => ({ ...initialLocs, ...prev }));
+          if(user) initialStatus[user._id] = "online";
+          setOnlineStatus(prev => ({...initialStatus, ...prev}));
         }
       } catch (err) {
-        console.error(err);
+        console.error("Fetch rooms error", err);
       }
     };
-    if (user) fetchInitialData();
+    if (user) fetchRooms();
   }, [user]);
 
-  const handleRoomClick = (room) => {
+  // --- HANDLE ROOM CLICK ---
+  const handleRoomClick = async (room) => {
     setSelectedRoom(room);
     setTargetUser(null);
-    socket.emit("join_room", { roomId: room._id });
     if (window.innerWidth < 768) setIsMobileListVisible(false);
+
+    // Fetch LATEST DB Locations immediately
+    try {
+        const token = localStorage.getItem("token");
+        const { data } = await axios.get(`http://localhost:3000/api/location/room/${room._id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if(data.success) {
+            const dbLocs = {};
+            data.locations.forEach(loc => {
+                dbLocs[loc.userId._id] = [loc.latitude, loc.longitude];
+            });
+            setMembersLocation(prev => ({ ...prev, ...dbLocs }));
+        }
+    } catch (error) {
+        console.error("Error fetching room locations:", error);
+    }
   };
 
   const myPos = membersLocation[user?._id];
@@ -175,7 +199,8 @@ const RoomMemberMap = () => {
 
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden bg-slate-50 relative font-sans text-slate-900">
-      {/* SIDEBAR - Exactly the same UI as before */}
+      
+      {/* --- SIDEBAR --- */}
       <div
         className={`absolute inset-0 z-40 bg-white flex flex-col border-r border-slate-200 transition-all duration-300 md:relative md:w-80 lg:w-96 md:transform-none 
         ${isMobileListVisible ? "translate-x-0" : "-translate-x-full"}`}
@@ -217,36 +242,42 @@ const RoomMemberMap = () => {
 
               {selectedRoom?._id === room._id && (
                 <div className="mt-3 space-y-2 pt-3 border-t border-white/20">
-                  {room.members.map((m) => (
-                    <div
-                      key={m._id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setTargetUser(m);
-                      }}
-                      className={`flex items-center justify-between p-2 rounded-lg text-[11px] transition-colors ${
-                        targetUser?._id === m._id
-                          ? "bg-white text-indigo-600"
-                          : "hover:bg-white/10"
-                      }`}
-                    >
-                      <span className="flex items-center gap-2">
-                        <User size={12} /> {m.username}
-                      </span>
-                      {membersLocation[m._id] ? (
-                        <span className="flex items-center gap-1.5">
-                          <span className="text-[9px] opacity-60 italic text-white">
-                            Live
-                          </span>
-                          <span className="w-1.5 h-1.5 bg-green-400 rounded-full shadow-[0_0_8px_rgba(74,222,128,0.8)]"></span>
+                  {room.members.map((m) => {
+                    const isUserOnline = onlineStatus[m._id] === "online";
+                    return (
+                        <div
+                        key={m._id}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setTargetUser(m);
+                        }}
+                        className={`flex items-center justify-between p-2 rounded-lg text-[11px] transition-colors ${
+                            targetUser?._id === m._id
+                            ? "bg-white text-indigo-600"
+                            : "hover:bg-white/10"
+                        }`}
+                        >
+                        <span className="flex items-center gap-2">
+                            <User size={12} /> {m.username}
                         </span>
-                      ) : (
-                        <span className="opacity-40 italic text-[9px]">
-                          no signal
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                        
+                        {/* Status Indicator */}
+                        <div className="flex items-center gap-1.5">
+                            {isUserOnline ? (
+                                <>
+                                <span className="text-[9px] opacity-60 italic text-white">Live</span>
+                                <span className="w-1.5 h-1.5 bg-green-400 rounded-full shadow-[0_0_8px_rgba(74,222,128,0.8)]"></span>
+                                </>
+                            ) : (
+                                <>
+                                <span className="text-[9px] opacity-60 italic text-slate-300">Offline</span>
+                                <span className="w-1.5 h-1.5 bg-slate-400 rounded-full"></span>
+                                </>
+                            )}
+                        </div>
+                        </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -254,8 +285,10 @@ const RoomMemberMap = () => {
         </div>
       </div>
 
-      {/* MAP AREA - UI stays the same */}
+      {/* --- MAP AREA --- */}
       <div className="flex-1 relative bg-slate-200">
+        
+        {/* Mobile Toggle & Header */}
         <div className="absolute top-4 left-4 right-4 z-[1000] flex items-center gap-3">
           {!isMobileListVisible && (
             <button
@@ -274,7 +307,7 @@ const RoomMemberMap = () => {
                 <p className="text-[10px] text-slate-500">
                   {targetUser
                     ? `Tracking ${targetUser.username}`
-                    : "All members live"}
+                    : "Room Overview"}
                 </p>
               </div>
               {targetUser && (
@@ -282,7 +315,7 @@ const RoomMemberMap = () => {
                   onClick={() => setTargetUser(null)}
                   className="text-[10px] font-bold text-indigo-600 hover:underline"
                 >
-                  Show All
+                  Clear Route
                 </button>
               )}
             </div>
@@ -301,20 +334,27 @@ const RoomMemberMap = () => {
 
             {selectedRoom.members.map((member) => {
               const pos = membersLocation[member._id];
-              if (!pos) return null;
+              const isUserOnline = onlineStatus[member._id] === "online";
+              
+              if (!pos) return null; 
+              
               return (
-                <Marker key={member._id} position={pos}>
+                <Marker key={member._id} position={pos} opacity={isUserOnline ? 1.0 : 0.6}>
                   <Popup className="custom-popup">
                     <div className="text-center p-1">
                       <p className="font-bold text-slate-800">
                         {member._id === user?._id ? "You" : member.username}
                       </p>
+                      <p className={`text-[10px] mb-2 ${isUserOnline ? "text-green-600 font-bold" : "text-slate-500"}`}>
+                        {isUserOnline ? "● Live Now" : "● Offline (Last Known)"}
+                      </p>
+                      
                       {member._id !== user?._id && (
                         <button
                           onClick={() => setTargetUser(member)}
-                          className="mt-2 bg-indigo-600 text-white px-3 py-1 rounded-lg text-[10px]"
+                          className="mt-1 flex items-center justify-center gap-1 w-full bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-[10px]"
                         >
-                          Plot Route
+                          <Navigation size={10} /> Route
                         </button>
                       )}
                     </div>
@@ -323,6 +363,7 @@ const RoomMemberMap = () => {
               );
             })}
 
+            {/* RENDER OPTIMIZED ROUTING LAYER */}
             {myPos && targetPos && (
               <RoutingLayer me={myPos} target={targetPos} />
             )}

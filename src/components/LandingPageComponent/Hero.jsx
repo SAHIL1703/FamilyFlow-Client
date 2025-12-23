@@ -2,31 +2,24 @@ import React from "react";
 
 const Hero = () => {
   return (
-    <div className="w-full my-4 space-y-8 mt-12">
-      {/* label */}
-      <div className="border-blue-200 flex flex-row items-center justify-center text-sm mx-auto bg-blue-100 w-fit px-3 py-1 rounded-full space-x-1.5">
-        <i className="text-blue-600 fa-solid fa-shield"></i>
-        <p className="text-blue-500">Trusted by 100+ families worldwide</p>
+    <div className="w-full pt-16 pb-8 md:pt-24 md:pb-12 text-center px-4">
+      {/* Badge */}
+      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-sm font-semibold mb-8 animate-fade-in-up">
+        <i className="fa-solid fa-shield-halved"></i>
+        <span>Trusted by 10,000+ families worldwide</span>
       </div>
 
-      {/* heading  */}
-      <div className="text-center space-y-6">
-        {/* heading text*/}
-        <div className="">
-          <h1 className="px-4 text-4xl md:text-5xl lg:text-8xl font-bold md:my-2">Keep Your Family</h1>
-          <h1 className="px-4 text-4xl md:text-5xl lg:text-8xl font-bold md:my-2">
-            <span className="text-blue-500">Connected</span> & <span className="text-amber-500">Safe</span>
-          </h1>
-        </div>
+      {/* Heading */}
+      <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 mb-6 leading-tight">
+        Keep Your Family <br className="hidden md:block" />
+        <span className="text-blue-600">Connected</span> & <span className="text-amber-500">Safe</span>
+      </h1>
 
-        {/* para text */}
-        <div className="px-4 sm:px-8 md:px-16 lg:px-32 text-center">
-          <p className="py-2 font-medium text-gray-500 md:text-xl lg:text-2xl">
-            Create private family rooms, chat in real-time, and see where
-            everyone is on the map. Stay connected with the people who matter most.
-          </p>
-        </div>
-      </div>
+      {/* Description */}
+      <p className="max-w-2xl mx-auto text-lg md:text-xl text-slate-500 mb-8 leading-relaxed">
+        Create private family rooms, chat in real-time, and see where
+        everyone is on the map. Peace of mind in one beautiful app.
+      </p>
     </div>
   );
 };
