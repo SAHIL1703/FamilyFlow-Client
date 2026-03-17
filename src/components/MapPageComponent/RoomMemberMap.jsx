@@ -73,6 +73,7 @@ const RoutingLayer = ({ me, target }) => {
           map.removeControl(routingControlRef.current);
         } catch (error) {
           console.warn("Routing cleanup handled gracefully");
+          console.log(error.message);
         }
       }
     };
@@ -146,7 +147,7 @@ const RoomMemberMap = () => {
       try {
         const token = localStorage.getItem("token");
         const { data } = await axios.get(
-          "http://localhost:3000/api/rooms/my-rooms",
+          "https://familyflow-kun4.onrender.com/api/rooms/my-rooms",
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (data.success) {
@@ -178,7 +179,7 @@ const RoomMemberMap = () => {
     // Fetch LATEST DB Locations immediately
     try {
         const token = localStorage.getItem("token");
-        const { data } = await axios.get(`http://localhost:3000/api/location/room/${room._id}`, {
+        const { data } = await axios.get(`https://familyflow-kun4.onrender.com/api/location/room/${room._id}`, {
             headers: { Authorization: `Bearer ${token}` }
         });
 

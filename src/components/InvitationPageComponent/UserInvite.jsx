@@ -20,7 +20,7 @@ const UserInvite = ({
     try {
       const token = localStorage.getItem("token");
       const { data } = await axios.post(
-        `http://localhost:3000/api/invites/accept/${id}`,
+        `https://familyflow-kun4.onrender.com/api/invites/accept/${id}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -44,7 +44,7 @@ const UserInvite = ({
     try {
       const token = localStorage.getItem("token");
       const { data } = await axios.delete(
-        `http://localhost:3000/api/invites/${id}`,
+        `https://familyflow-kun4.onrender.com/api/invites/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

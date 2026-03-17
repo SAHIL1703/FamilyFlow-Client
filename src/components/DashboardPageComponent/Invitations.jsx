@@ -11,7 +11,7 @@ const Invitations = () => {
     try {
       const token = localStorage.getItem("token");
 
-      const { data } = await axios.get("http://localhost:3000/api/invites", {
+      const { data } = await axios.get("https://familyflow-kun4.onrender.com/api/invites", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -47,7 +47,7 @@ const Invitations = () => {
       const token = localStorage.getItem("token");
 
       await axios.post(
-        `http://localhost:3000/api/invites/accept/${id}`,
+        `https://familyflow-kun4.onrender.com/api/invites/accept/${id}`,
         {},
         {
           headers: {
@@ -70,7 +70,7 @@ const Invitations = () => {
       const token = localStorage.getItem("token");
 
       await axios.post(
-        `http://localhost:3000/api/invites/reject/${id}`,
+        `https://familyflow-kun4.onrender.com/api/invites/reject/${id}`,
         {},
         {
           headers: {

@@ -28,7 +28,7 @@ const InvitationsPage = () => {
     const token = localStorage.getItem("token");
     try {
       const { data } = await axios.get(
-        "http://localhost:3000/api/invites/sent/with-room",
+        "https://familyflow-kun4.onrender.com/api/invites/sent/with-room",
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (data.success) {
@@ -43,7 +43,7 @@ const InvitationsPage = () => {
   const fetchReceivedInvites = async () => {
     const token = localStorage.getItem("token");
     try {
-      const { data } = await axios.get("http://localhost:3000/api/invites", {
+      const { data } = await axios.get("https://familyflow-kun4.onrender.com/api/invites", {
         headers: { Authorization: `Bearer ${token}` },
       });
 

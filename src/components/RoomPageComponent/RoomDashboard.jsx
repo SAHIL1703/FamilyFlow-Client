@@ -29,7 +29,7 @@ const RoomDashboard = ({ rooms, setRooms, currentUserId, onCreateClick }) => {
       const token = localStorage.getItem("token");
 
       const { data } = await axios.delete(
-        `http://localhost:3000/api/rooms/delete/${roomId}`,
+        `https://familyflow-kun4.onrender.com/api/rooms/delete/${roomId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

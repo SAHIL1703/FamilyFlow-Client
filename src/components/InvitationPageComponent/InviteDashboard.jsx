@@ -34,7 +34,7 @@ const InviteDashboard = ({stats}) => {
     const token = localStorage.getItem("token");
     try {
       const { data } = await axios.get(
-        "http://localhost:3000/api/rooms/my-rooms",
+        "https://familyflow-kun4.onrender.com/api/rooms/my-rooms",
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -85,7 +85,7 @@ const InviteDashboard = ({stats}) => {
 
     try {
       const token = localStorage.getItem("token");
-      const {data} = await axios.post("http://localhost:3000/api/invites/send" , payload,{
+      const {data} = await axios.post("https://familyflow-kun4.onrender.com/api/invites/send" , payload,{
         headers : {Authorization : `Bearer ${token}`}
       })
       console.log(data);

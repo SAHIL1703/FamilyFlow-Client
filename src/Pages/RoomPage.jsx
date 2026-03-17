@@ -25,7 +25,7 @@ const RoomPage = () => {
 
     const fetchRoomsData = async () => {
       try {
-        const { data } = await axios.get("http://localhost:3000/api/rooms/my-rooms", {
+        const { data } = await axios.get("https://familyflow-kun4.onrender.com/api/rooms/my-rooms", {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (data.success) {

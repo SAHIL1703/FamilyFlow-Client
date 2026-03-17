@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { AppContext } from "../../context/AppContext";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:3000");
+const socket = io("https://familyflow-kun4.onrender.com");
 
 const ChatDashboard = () => {
   const { user } = useContext(AppContext);
@@ -28,7 +28,7 @@ const ChatDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
-      const { data } = await axios.get("http://localhost:3000/api/rooms/my-rooms", {
+      const { data } = await axios.get("https://familyflow-kun4.onrender.com/api/rooms/my-rooms", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (data.success) setRooms(data.rooms);
@@ -40,7 +40,7 @@ const ChatDashboard = () => {
   const fetchMessages = async (roomId) => {
     try {
       const token = localStorage.getItem("token");
-      const { data } = await axios.get(`http://localhost:3000/api/messages/${roomId}`, {
+      const { data } = await axios.get(`https://familyflow-kun4.onrender.com/api/messages/${roomId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (data.success) setMessages(data.messages);
@@ -90,7 +90,7 @@ const ChatDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const { data } = await axios.post(
-        `http://localhost:3000/api/messages/${selectedRoom._id}`,
+        `https://familyflow-kun4.onrender.com/api/messages/${selectedRoom._id}`,
         { text: inputMsg },
         { headers: { Authorization: `Bearer ${token}` } }
       );

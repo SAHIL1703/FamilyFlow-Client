@@ -88,7 +88,7 @@ const RoomsActivity = () => {
     const fetchRooms =async()=>{
       try{
         const token = localStorage.getItem("token");
-        const {data} = await axios.get("http://localhost:3000/api/rooms/my-rooms" , {
+        const {data} = await axios.get("https://familyflow-kun4.onrender.com/api/rooms/my-rooms" , {
           headers : {Authorization : `Bearer ${token}`}
         })
         console.log(data.rooms)
@@ -104,73 +104,7 @@ const RoomsActivity = () => {
 
   } , [user , navigate])
 
-  // const roomsData = [
-  //   {
-  //     id: 1,
-  //     name: "Pisal Family",
-  //     totalMembers: 8,
-  //     activeCount: 3,
-  //     lastSender: "Sahil",
-  //     lastMessage: "Hii how are you? Are we meeting today?",
-  //   },
-  //   {
-  //     id: 2,
-  //     name: "College Group",
-  //     totalMembers: 45,
-  //     activeCount: 0,
-  //     lastSender: "Aniket",
-  //     lastMessage: "Notes send karo koi please.",
-  //   },
-  //   {
-  //     id: 3,
-  //     name: "Goa Trip 🌴",
-  //     totalMembers: 5,
-  //     activeCount: 2,
-  //     lastSender: "Bhavesh",
-  //     lastMessage: "I have booked the hotels.",
-  //   },
-  //   {
-  //     id: 4,
-  //     name: "Office Project",
-  //     totalMembers: 12,
-  //     activeCount: 5,
-  //     lastSender: "Manager",
-  //     lastMessage: "Please update the status sheet.",
-  //   },
-  //   {
-  //     id: 5,
-  //     name: "Gym Bros",
-  //     totalMembers: 4,
-  //     activeCount: 1,
-  //     lastSender: "Rahul",
-  //     lastMessage: "Leg day today?",
-  //   },
-  //   {
-  //     id: 6,
-  //     name: "Gaming Squad",
-  //     totalMembers: 6,
-  //     activeCount: 4,
-  //     lastSender: "Sniper",
-  //     lastMessage: "Come online fast!",
-  //   },
-  //   {
-  //     id: 7,
-  //     name: "React Developers",
-  //     totalMembers: 120,
-  //     activeCount: 15,
-  //     lastSender: "Dev",
-  //     lastMessage: "How to fix useEffect loop?",
-  //   },
-  //   {
-  //     id: 8,
-  //     name: "Trekking Club",
-  //     totalMembers: 20,
-  //     activeCount: 0,
-  //     lastSender: "Guide",
-  //     lastMessage: "Next trip is on Sunday.",
-  //   },
-  // ];
-
+  
   const handleClick =()=>{
     console.log("Button Clicked")
     navigate("/app-room")

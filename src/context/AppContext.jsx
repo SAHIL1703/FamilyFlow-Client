@@ -24,7 +24,7 @@ export const AppProvider = ({ children }) => {
 
     try {
       const { data } = await axios.get(
-        "http://localhost:3000/api/auth/me",
+        "https://familyflow-kun4.onrender.com/api/auth/me",
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setUser(data.user);

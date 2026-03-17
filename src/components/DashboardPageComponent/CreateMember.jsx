@@ -29,7 +29,7 @@ const CreateMember = () => {
       try {
         const token = localStorage.getItem("token");
         const res = await axios.get(
-          "http://localhost:3000/api/rooms/room-count",
+          "https://familyflow-kun4.onrender.com/api/rooms/room-count",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -54,7 +54,7 @@ const CreateMember = () => {
       try {
         const token = localStorage.getItem("token");
         const res = await axios.get(
-          "http://localhost:3000/api/invites/sent/pending",
+          "https://familyflow-kun4.onrender.com/api/invites/sent/pending",
           {
             headers: { Authorization: `Bearer ${token}` },
           }

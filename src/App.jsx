@@ -1,6 +1,8 @@
 import React, { useEffect, useContext, useRef } from "react";
 import { Toaster } from 'react-hot-toast';
 import { Route, Routes, Navigate, Outlet } from "react-router-dom";
+import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 
 // IMPORT SHARED SOCKET
 import { socket } from "./socket"; 
@@ -33,7 +35,7 @@ const ProtectedRoutes = () => {
 const App = () => {
   const { user, setUserLocation } = useContext(AppContext);
   
-  // Ref to hold latest GPS data (avoids stale closures in setInterval)
+  // Ref to hold latest GPS data (avoids stale closures)
   const locationRef = useRef({ lat: null, lng: null });
 
   // 3. SETUP SOCKET & TRACKING
@@ -46,47 +48,87 @@ const App = () => {
     socket.emit("setup_socket", user._id);
     console.log("🔌 Socket Setup Emitted for:", user.username);
 
-    // B. Start GPS Watcher
-    const watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        // Update Ref for the Interval
-        locationRef.current = { lat: latitude, lng: longitude };
-        
-        // Update Global Context (for immediate UI use)
-        if (setUserLocation) {
-          setUserLocation([latitude, longitude]);
-        }
-      },
-      (err) => {
-        console.warn(`GPS Warning (${err.code}): ${err.message}`);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 30000,
-        maximumAge: 0, // Force fresh data
-      }
-    );
+    let watcherId = null;
 
-    // C. Interval: Send Location every 5 Seconds
-    const intervalId = setInterval(() => {
-        const { lat, lng } = locationRef.current;
+    const startTracking = async () => {
+      try {
+        // === 1. PERMISSIONS CHECK ===
+        // This works for both Mobile and Web
+        const permissionStatus = await Geolocation.checkPermissions();
         
-        if (lat && lng) {
-            // console.log("📍 Sending 5s Update:", lat, lng);
-            socket.emit("send_location", {
-                userId: user._id,
-                latitude: lat,
-                longitude: lng,
-            });
+        if (permissionStatus.location !== 'granted') {
+           const requestStatus = await Geolocation.requestPermissions();
+           if (requestStatus.location !== 'granted') {
+             console.warn("Location permission denied");
+             return;
+           }
         }
-    }, 5000);
+
+        // === 2. START WATCHER ===
+        // Geolocation.watchPosition works on both Web and Native (Android/iOS)
+        watcherId = await Geolocation.watchPosition(
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          },
+          (position, err) => {
+            if (err) {
+              console.error("GPS Error:", err);
+              return;
+            }
+
+            if (position) {
+               const { latitude, longitude } = position.coords;
+
+               // Update Ref
+               locationRef.current = { lat: latitude, lng: longitude };
+
+               // Update Context (for UI)
+               if (setUserLocation) {
+                 setUserLocation([latitude, longitude]);
+               }
+
+               // SEND TO SOCKET
+               // Note: On Native, we send directly here to ensure updates happen
+               // even if the standard JS loop is paused.
+               console.log("📍 Location Update:", latitude, longitude);
+               socket.emit("send_location", {
+                  userId: user._id,
+                  latitude: latitude,
+                  longitude: longitude,
+               });
+            }
+          }
+        );
+
+      } catch (e) {
+        console.error("Tracking Error:", e);
+      }
+    };
+
+    startTracking();
+
+    // === 3. WEB BACKUP INTERVAL ===
+    // If we are on the WEB (not native), browsers sometimes sleep the watcher.
+    // This interval acts as a backup to keep the connection alive if the tab is open.
+    let webInterval = null;
+    if (!Capacitor.isNativePlatform()) {
+        webInterval = setInterval(() => {
+            const { lat, lng } = locationRef.current;
+            if (lat && lng) {
+                 // Redundant emit for safety on web
+                 // socket.emit("send_location", ... ) is handled in watcher, 
+                 // but you can uncomment this if web updates feel laggy.
+            }
+        }, 5000);
+    }
 
     // Cleanup on logout/unmount
     return () => {
-      console.log("🛑 Cleaning up App effects");
-      navigator.geolocation.clearWatch(watchId);
-      clearInterval(intervalId);
+      console.log("🛑 Cleaning up Tracking");
+      if (watcherId) Geolocation.clearWatch({ id: watcherId });
+      if (webInterval) clearInterval(webInterval);
     };
   }, [user?._id, setUserLocation]);
 

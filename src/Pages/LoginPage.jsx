@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 const LoginPage = () => {
-  const baseURI = "http://localhost:3000";
+  const baseURI = "https://familyflow-kun4.onrender.com";
 
   const { login, user, loading } = useContext(AppContext);
 

@@ -7,7 +7,7 @@ const FeatureHeader = () => {
         Features
       </p>
       <h2 className="mb-6 text-3xl font-extrabold leading-tight text-slate-900 sm:text-4xl md:text-5xl">
-        Everything Your Family Needs
+        Everything Your Family Needs.
       </h2>
       <p className="mx-auto max-w-2xl text-lg text-slate-500">
         FamilyFlow brings together all the tools you need to stay
