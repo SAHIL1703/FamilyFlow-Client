@@ -100,7 +100,7 @@ const ChatDashboard = () => {
         setInputMsg("");
       }
     } catch (error) {
-      toast.error("Message not sent");
+      toast.error("Message not sent", error.message);
     }
   };
 

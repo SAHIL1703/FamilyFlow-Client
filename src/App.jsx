@@ -1,5 +1,5 @@
 import React, { useEffect, useContext, useRef } from "react";
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast'; // 👈 Added toast import
 import { Route, Routes, Navigate, Outlet } from "react-router-dom";
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
@@ -19,6 +19,7 @@ import LoginPage from "./Pages/LoginPage";
 import FeaturePage from "./Pages/FeaturePage";
 import AboutPage from "./Pages/AboutPage";
 import TeamPage from "./Pages/TeamPage";
+import LinkDevicePage from "./Pages/LinkDevicePage"; // 👈 NEW IMPORT
 
 // 1. AUTH LOGIC
 const useAuth = () => {
@@ -35,25 +36,43 @@ const ProtectedRoutes = () => {
 const App = () => {
   const { user, setUserLocation } = useContext(AppContext);
   
-  // Ref to hold latest GPS data (avoids stale closures)
+  // Ref to hold latest GPS data
   const locationRef = useRef({ lat: null, lng: null });
 
   // 3. SETUP SOCKET & TRACKING
   useEffect(() => {
-    // Only run if user is logged in
     if (!user?._id) return;
 
-    // A. Connect & Identify User
     if (!socket.connected) socket.connect();
     socket.emit("setup_socket", user._id);
     console.log("🔌 Socket Setup Emitted for:", user.username);
+
+    // 👇 NEW: LISTEN FOR SCREAM ALERTS FROM BACKEND
+    socket.on("emergency_alert", (data) => {
+      console.error("🚨 EMERGENCY RECEIVED:", data);
+      
+      // Show a massive toast notification that doesn't disappear easily
+      toast.error(`🚨 ${data.message}`, {
+        duration: 10000, // Stays on screen for 10 seconds
+        style: {
+          border: '2px solid red',
+          padding: '16px',
+          color: 'red',
+          fontWeight: 'bold',
+          fontSize: '18px'
+        },
+      });
+
+      // Optional: If on mobile, vibrate the phone!
+      // if (Capacitor.isNativePlatform()) {
+      //   import('@capacitor/haptics').then(({ Haptics }) => Haptics.vibrate());
+      // }
+    });
 
     let watcherId = null;
 
     const startTracking = async () => {
       try {
-        // === 1. PERMISSIONS CHECK ===
-        // This works for both Mobile and Web
         const permissionStatus = await Geolocation.checkPermissions();
         
         if (permissionStatus.location !== 'granted') {
@@ -64,8 +83,6 @@ const App = () => {
            }
         }
 
-        // === 2. START WATCHER ===
-        // Geolocation.watchPosition works on both Web and Native (Android/iOS)
         watcherId = await Geolocation.watchPosition(
           {
             enableHighAccuracy: true,
@@ -80,19 +97,12 @@ const App = () => {
 
             if (position) {
                const { latitude, longitude } = position.coords;
-
-               // Update Ref
                locationRef.current = { lat: latitude, lng: longitude };
 
-               // Update Context (for UI)
                if (setUserLocation) {
                  setUserLocation([latitude, longitude]);
                }
 
-               // SEND TO SOCKET
-               // Note: On Native, we send directly here to ensure updates happen
-               // even if the standard JS loop is paused.
-               console.log("📍 Location Update:", latitude, longitude);
                socket.emit("send_location", {
                   userId: user._id,
                   latitude: latitude,
@@ -109,26 +119,21 @@ const App = () => {
 
     startTracking();
 
-    // === 3. WEB BACKUP INTERVAL ===
-    // If we are on the WEB (not native), browsers sometimes sleep the watcher.
-    // This interval acts as a backup to keep the connection alive if the tab is open.
     let webInterval = null;
     if (!Capacitor.isNativePlatform()) {
         webInterval = setInterval(() => {
             const { lat, lng } = locationRef.current;
-            if (lat && lng) {
-                 // Redundant emit for safety on web
-                 // socket.emit("send_location", ... ) is handled in watcher, 
-                 // but you can uncomment this if web updates feel laggy.
-            }
+            // Web backup interval logic
         }, 5000);
     }
 
-    // Cleanup on logout/unmount
     return () => {
       console.log("🛑 Cleaning up Tracking");
       if (watcherId) Geolocation.clearWatch({ id: watcherId });
       if (webInterval) clearInterval(webInterval);
+      
+      // 👇 Clean up the socket listener so it doesn't duplicate
+      socket.off("emergency_alert"); 
     };
   }, [user?._id, setUserLocation]);
 
@@ -151,6 +156,9 @@ const App = () => {
           <Route path="/app-invite" element={<InvitationsPage />} />
           <Route path="/app-map" element={<MapPage />} />
           <Route path="/app-chat" element={<ChatPage />} />
+          
+          {/* 👇 NEW DEVICE LINKING ROUTE */}
+          <Route path="/app-device" element={<LinkDevicePage />} />
         </Route>
       </Routes>
     </div>
