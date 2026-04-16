@@ -2,6 +2,14 @@
 
 @import "tailwindcss";
 
+/* Leaflet alert icon ping animation (inline styles fallback) */
+@keyframes leaflet-ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
 *{
   font-family:"outfit", sans-serif;
 }

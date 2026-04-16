@@ -23,6 +23,17 @@ import "leaflet-routing-machine";
 // IMPORT SHARED SOCKET
 import { socket } from "../../socket";
 
+// 🚨 CUSTOM RED PULSING ICON (Must be outside component to prevent rendering bugs)
+const alertIcon = L.divIcon({
+  className: "", // Empty string removes Leaflet's default white background box
+  html: `<div style="position:relative;display:flex;align-items:center;justify-content:center;width:32px;height:32px;">
+           <span style="position:absolute;display:inline-flex;width:100%;height:100%;border-radius:9999px;background:rgba(239,68,68,0.75);animation:leaflet-ping 1s cubic-bezier(0,0,0.2,1) infinite;"></span>
+           <span style="position:relative;display:inline-flex;width:16px;height:16px;border-radius:9999px;background:#dc2626;border:2px solid white;box-shadow:0 0 12px rgba(239,68,68,0.6);"></span>
+         </div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+});
+
 // --- 1. MAP INVALIDATOR (Fixes Grey Tiles on resize) ---
 const MapInvalidator = ({ isMobileListVisible }) => {
   const map = useMap();
@@ -100,7 +111,7 @@ const RoutingLayer = ({ me, target }) => {
 
 // --- 3. MAIN COMPONENT ---
 const RoomMemberMap = () => {
-  const { user } = useContext(AppContext);
+  const { user, alertedUsers, addAlertedUser } = useContext(AppContext);
   const [rooms, setRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
   
@@ -125,7 +136,6 @@ const RoomMemberMap = () => {
 
     // 2. Receive Status Change (Online/Offline)
     const handleStatusChange = (data) => {
-        // console.log(`User ${data.userId} is now ${data.status}`);
         setOnlineStatus((prev) => ({
             ...prev,
             [data.userId]: data.status 
@@ -193,6 +203,19 @@ const RoomMemberMap = () => {
     } catch (error) {
         console.error("Error fetching room locations:", error);
     }
+
+    // Fetch recent alerts for this room (last 5 minutes) so markers show even if socket event was missed
+    try {
+        const token = localStorage.getItem("token");
+        const { data: alertData } = await axios.get(`https://familyflow-kun4.onrender.com/api/alerts/room/${room._id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (alertData.success && alertData.alerts.length > 0) {
+            alertData.alerts.forEach(alert => addAlertedUser(alert.userId));
+        }
+    } catch (error) {
+        // Silently ignore — endpoint may not be deployed yet
+    }
   };
 
   const myPos = membersLocation[user?._id];
@@ -245,6 +268,7 @@ const RoomMemberMap = () => {
                 <div className="mt-3 space-y-2 pt-3 border-t border-white/20">
                   {room.members.map((m) => {
                     const isUserOnline = onlineStatus[m._id] === "online";
+                    const isUserAlerted = alertedUsers.has(String(m._id));
                     return (
                         <div
                         key={m._id}
@@ -253,18 +277,30 @@ const RoomMemberMap = () => {
                             setTargetUser(m);
                         }}
                         className={`flex items-center justify-between p-2 rounded-lg text-[11px] transition-colors ${
-                            targetUser?._id === m._id
+                            isUserAlerted
+                            ? "bg-red-500/20 border border-red-400/50"
+                            : targetUser?._id === m._id
                             ? "bg-white text-indigo-600"
                             : "hover:bg-white/10"
                         }`}
                         >
                         <span className="flex items-center gap-2">
                             <User size={12} /> {m.username}
+                            {isUserAlerted && (
+                              <span className="text-[9px] font-bold text-red-400 animate-pulse">🚨 ALERT</span>
+                            )}
                         </span>
                         
                         {/* Status Indicator */}
                         <div className="flex items-center gap-1.5">
-                            {isUserOnline ? (
+                            {isUserAlerted ? (
+                                <>
+                                <span className="relative flex h-2.5 w-2.5">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                                </span>
+                                </>
+                            ) : isUserOnline ? (
                                 <>
                                 <span className="text-[9px] opacity-60 italic text-white">Live</span>
                                 <span className="w-1.5 h-1.5 bg-green-400 rounded-full shadow-[0_0_8px_rgba(74,222,128,0.8)]"></span>
@@ -339,13 +375,30 @@ const RoomMemberMap = () => {
               
               if (!pos) return null; 
               
+              const isUserAlerted = alertedUsers.has(String(member._id)); // 👈 Safe string match
+              const markerProps = isUserAlerted ? { icon: alertIcon } : {}; 
+              
+              // 👈 MAGIC FIX: Changing the key forces React-Leaflet to completely unmount and re-draw the marker!
+              const markerKey = `${member._id}-${isUserAlerted ? "alert" : "normal"}`;
+
               return (
-                <Marker key={member._id} position={pos} opacity={isUserOnline ? 1.0 : 0.6}>
+                <Marker 
+                  key={markerKey} 
+                  position={pos} 
+                  opacity={isUserOnline ? 1.0 : 0.6}
+                  {...markerProps} 
+                >
                   <Popup className="custom-popup">
                     <div className="text-center p-1">
                       <p className="font-bold text-slate-800">
                         {member._id === user?._id ? "You" : member.username}
                       </p>
+                      {/* 🚨 Show Emergency text in Popup */}
+                      {isUserAlerted && (
+                        <p className="text-[10px] mb-1 font-bold text-red-600 animate-pulse">
+                          🚨 SCREAM DETECTED!
+                        </p>
+                      )}
                       <p className={`text-[10px] mb-2 ${isUserOnline ? "text-green-600 font-bold" : "text-slate-500"}`}>
                         {isUserOnline ? "● Live Now" : "● Offline (Last Known)"}
                       </p>

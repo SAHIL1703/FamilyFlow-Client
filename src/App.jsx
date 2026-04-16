@@ -34,7 +34,7 @@ const ProtectedRoutes = () => {
 };
 
 const App = () => {
-  const { user, setUserLocation } = useContext(AppContext);
+  const { user, setUserLocation, addAlertedUser } = useContext(AppContext);
   
   // Ref to hold latest GPS data
   const locationRef = useRef({ lat: null, lng: null });
@@ -47,13 +47,15 @@ const App = () => {
     socket.emit("setup_socket", user._id);
     console.log("🔌 Socket Setup Emitted for:", user.username);
 
-    // 👇 NEW: LISTEN FOR SCREAM ALERTS FROM BACKEND
-    socket.on("emergency_alert", (data) => {
-      console.error("🚨 EMERGENCY RECEIVED:", data);
+    // 👇 NEW: Define the function so we can safely remove it later!
+    const handleGlobalEmergency = (data) => {
+      console.error("🚨 APP.JSX EMERGENCY RECEIVED:", data);
       
-      // Show a massive toast notification that doesn't disappear easily
+      // Update global alert state so the map marker turns red
+      if (data.userId) addAlertedUser(data.userId);
+
       toast.error(`🚨 ${data.message}`, {
-        duration: 10000, // Stays on screen for 10 seconds
+        duration: 10000,
         style: {
           border: '2px solid red',
           padding: '16px',
@@ -62,12 +64,16 @@ const App = () => {
           fontSize: '18px'
         },
       });
+    };
 
-      // Optional: If on mobile, vibrate the phone!
-      // if (Capacitor.isNativePlatform()) {
-      //   import('@capacitor/haptics').then(({ Haptics }) => Haptics.vibrate());
-      // }
-    });
+    socket.on("emergency_alert", handleGlobalEmergency);
+
+    // 🔄 Re-join rooms when socket reconnects (e.g., after server restart)
+    const handleReconnect = () => {
+      console.log("🔄 Socket reconnected — re-emitting setup_socket");
+      socket.emit("setup_socket", user._id);
+    };
+    socket.on("connect", handleReconnect);
 
     let watcherId = null;
 
@@ -132,10 +138,11 @@ const App = () => {
       if (watcherId) Geolocation.clearWatch({ id: watcherId });
       if (webInterval) clearInterval(webInterval);
       
-      // 👇 Clean up the socket listener so it doesn't duplicate
-      socket.off("emergency_alert"); 
+      // 👇 ONLY remove the App.jsx listener, leave the Map alone!
+      socket.off("emergency_alert", handleGlobalEmergency);
+      socket.off("connect", handleReconnect);
     };
-  }, [user?._id, setUserLocation]);
+  }, [user?._id, setUserLocation, addAlertedUser]);
 
   return (
     <div className="app-container">
